@@ -1,8 +1,8 @@
 """Aplicacion principal Streamlit para Tribuna Global.
 
-Gestion de la interfaz tecnica para el registro de opiniones de aficionados
-sobre futbolistas internacionales, analisis semantico con LangChain y
-consulta estructurada con filtros, metricas y descarga de datos.
+Pipeline de clasificacion semantica y analisis de percepcion de aficionados
+sobre futbolistas internacionales con LangChain y modelos estructurados.
+Diseno tecnico libre de emojis con soporte Dark/Light Mode e iconos vectoriales SVG.
 """
 
 from __future__ import annotations
@@ -16,13 +16,12 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-# Asegurar que el directorio raiz y src esten en sys.path
+# Rutas base
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from src.almacenamiento import (  # noqa: E402
-    DATOS_DIR,
     RUTA_JUGADORES_DEFAULT,
     RUTA_OPINIONES_DEFAULT,
     actualizar_opinion,
@@ -34,8 +33,6 @@ from src.almacenamiento import (  # noqa: E402
     guardar_opinion,
 )
 from src.analisis import (  # noqa: E402
-    MODELO_GEMINI_DEFAULT,
-    MODELO_OPENAI_DEFAULT,
     VERSION_PROMPT,
     analizar_opinion,
     analizar_opinion_mock,
@@ -54,20 +51,16 @@ from src.visualizaciones import (  # noqa: E402
 
 
 def inicializar_estado():
-    """Inicializa las variables necesarias en st.session_state."""
+    """Inicializa variables de sesion."""
     if "mensajes_chat" not in st.session_state:
         st.session_state.mensajes_chat = []
-    if "ultima_opinion_guardada" not in st.session_state:
-        st.session_state.ultima_opinion_guardada = None
-    if "ids_procesados" not in st.session_state:
-        st.session_state.ids_procesados = set()
 
 
 def formatear_fecha(iso_fecha: str) -> str:
-    """Convierte una fecha ISO 8601 a formato legible local."""
+    """Convierte fecha ISO 8601 a formato tecnico legible."""
     try:
         dt = datetime.fromisoformat(iso_fecha)
-        return dt.strftime("%d/%m/%Y %H:%M UTC")
+        return dt.strftime("%Y-%m-%d %H:%M UTC")
     except Exception:
         return iso_fecha
 
@@ -75,7 +68,6 @@ def formatear_fecha(iso_fecha: str) -> str:
 def main():
     st.set_page_config(
         page_title="Tribuna Global | Analisis de Percepcion",
-        page_icon=None,
         layout="wide",
         initial_sidebar_state="expanded",
     )
@@ -83,7 +75,7 @@ def main():
     aplicar_estilos_personalizados()
     inicializar_estado()
 
-    # Cargar catalogo de jugadores con manejo de errores
+    # Cargar catalogo
     try:
         jugadores = cargar_jugadores(RUTA_JUGADORES_DEFAULT)
     except Exception as exc:
@@ -91,110 +83,105 @@ def main():
         st.stop()
 
     # -------------------------------------------------------------------------
-    # Barra Lateral: Configuracion y Seleccion Tecnica
+    # Barra Lateral
     # -------------------------------------------------------------------------
     with st.sidebar:
         st.markdown("### Panel de Control")
-        st.caption("Configuracion de inferencia y parametros de sesion")
+        st.caption("Configuracion del sistema e inferencia")
         st.divider()
 
-        st.markdown("**1. Futbolista Objetivo**")
-        # Selector de futbolista con codigo ISO formal (evita emojis de banderas que se rompen en Windows)
+        st.markdown("**1. Futbolista Seleccionado**")
         opciones_jugadores = {
             f"[{obtener_codigo_pais(j['pais'])}] {j['nombre']} ({j['pais']})": j
             for j in jugadores
         }
         etiqueta_seleccionada = st.selectbox(
-            "Seleccionar de catalogo:",
+            "Seleccionar jugador:",
             options=list(opciones_jugadores.keys()),
             index=0,
-            help="El identificador interno del futbolista quedara capturado inmutablemente al enviar la opinion.",
             label_visibility="collapsed",
+            help="El identificador unico queda capturado inmutablemente al enviar la opinion.",
         )
         jugador_activo = opciones_jugadores[etiqueta_seleccionada]
 
         st.caption(
-            f"ID de Registro: `{jugador_activo['id']}` | Pais: `{jugador_activo['pais']}` ({obtener_codigo_pais(jugador_activo['pais'])})"
+            f"ID Canonico: `{jugador_activo['id']}` | Pais: `{jugador_activo['pais']}` ({obtener_codigo_pais(jugador_activo['pais'])})"
         )
 
         st.divider()
         st.markdown("**2. Motor de Inferencia**")
 
         proveedor_opcion = st.selectbox(
-            "Proveedor de Modelo:",
+            "Proveedor LLM:",
             options=["Google Gemini (Capa Gratuita)", "OpenAI"],
             index=0,
-            help="Google Gemini ofrece una capa gratuita oficial para desarrollo y experimentacion.",
+            help="Google Gemini ofrece una capa gratuita oficial para desarrollo y pruebas.",
         )
 
         es_gemini = "gemini" in proveedor_opcion.lower()
 
         if es_gemini:
             st.markdown(
-                "[Obtener API Key gratuita en Google AI Studio](https://aistudio.google.com/app/apikey)"
+                "[Obtener clave gratuita en Google AI Studio](https://aistudio.google.com/app/apikey)"
             )
             gemini_key_env = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
-            tiene_key_env = bool(gemini_key_env and gemini_key_env != "tu_clave_de_gemini_aqui")
+            tiene_key = bool(gemini_key_env and gemini_key_env != "tu_clave_de_gemini_aqui")
 
             api_key_input = st.text_input(
                 "Gemini API Key:",
-                value=gemini_key_env if tiene_key_env else "",
+                value=gemini_key_env if tiene_key else "",
                 type="password",
-                help="Configurable en el archivo .env como GEMINI_API_KEY.",
+                placeholder="Ingresar clave o definir GEMINI_API_KEY en .env",
             )
 
             modelo_seleccionado = st.selectbox(
-                "Modelo LLM:",
+                "Modelo Gemini:",
                 options=["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"],
                 index=0,
-                help="Temperatura fijada a 0.0 para reproducibilidad determinista.",
             )
             proveedor_str = "gemini"
         else:
             openai_key_env = os.getenv("OPENAI_API_KEY", "")
-            tiene_key_env = bool(openai_key_env and openai_key_env != "clave_configurada_localmente")
+            tiene_key = bool(openai_key_env and openai_key_env != "clave_configurada_localmente")
 
             api_key_input = st.text_input(
                 "OpenAI API Key:",
-                value=openai_key_env if tiene_key_env else "",
+                value=openai_key_env if tiene_key else "",
                 type="password",
-                help="Configurable en el archivo .env como OPENAI_API_KEY.",
+                placeholder="Ingresar clave o definir OPENAI_API_KEY en .env",
             )
 
             modelo_seleccionado = st.selectbox(
-                "Modelo LLM:",
+                "Modelo OpenAI:",
                 options=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
                 index=0,
-                help="Temperatura fijada a 0.0 para reproducibilidad.",
             )
             proveedor_str = "openai"
 
         modo_offline = st.checkbox(
             "Motor Offline (Modo Demostracion)",
-            value=not tiene_key_env and not api_key_input,
+            value=not tiene_key and not api_key_input,
             help="Evalua deterministicamente los casos de prueba del taller sin llamadas externas a la API.",
         )
 
         st.divider()
-        # Boton de nueva conversacion: limpia historial de sesion sin tocar JSON
-        if st.button("Nueva conversacion", use_container_width=True):
+        if st.button("Nueva Conversacion", use_container_width=True):
             st.session_state.mensajes_chat = []
-            st.success("Historial de sesion reiniciado. Los registros persistentes en disco se conservan intactos.")
+            st.success("Historial de sesion reiniciado. Los registros en disco se conservan intactos.")
             st.rerun()
 
     # -------------------------------------------------------------------------
-    # Cabecera Principal de la Aplicacion
+    # Cabecera Principal y Reglas
     # -------------------------------------------------------------------------
     renderizar_cabecera()
 
     with st.expander("Especificaciones tecnicas y reglas de clasificacion del sistema", expanded=False):
         st.markdown(
             """
-            - **Descargo Metodologico:** La clasificacion describe unicamente la carga semantica manifestada por el aficionado; no establece el rendimiento deportivo objetivo del jugador.
-            - **Alcance Muestral:** Los datos reflejan exclusivamente las opiniones almacenadas localmente en este sistema.
-            - **Independencia Transaccional:** Cada opinion se procesa aisladamente sin inyectar historial previo al clasificador para evitar sesgos de contexto.
-            - **Categorias Semanticas:** `positivo`, `negativo`, `neutro` (estrictamente factual o descriptivo) y `mixto` (coexistencia de elogios y objeciones sustanciales).
-            - **Filtro de Pertinencia:** Entradas desvinculadas del futbolista o intentos de prompt injection son catalogadas con `es_pertinente=false` y excluidas del archivo persistente.
+            - **Descargo Metodologico:** La clasificacion describe exclusivamente la percepcion expresada por el usuario en el texto; no establece la calidad deportiva objetiva del futbolista.
+            - **Aislamiento de Inferencia:** Cada opinion se procesa de forma independiente sin inyectar el historial previo al clasificador.
+            - **Categorias:** `positivo`, `negativo`, `neutro` (declaraciones puramente factuales o estadisticas) y `mixto` (coexistencia de elogios y objeciones sustanciales).
+            - **Pertinencia Discursiva:** Entradas ajenas al futbolista o instrucciones de prompt injection son catalogadas con `es_pertinente=false` y excluidas del archivo persistente.
             """
         )
 
@@ -213,7 +200,7 @@ def main():
     with tab_emitir:
         renderizar_tarjeta_jugador(jugador_activo)
 
-        # Historial de chat de la sesion
+        # Historial de mensajes de la sesion
         for msg in st.session_state.mensajes_chat:
             rol = msg.get("rol", "user")
             with st.chat_message(rol):
@@ -231,14 +218,14 @@ def main():
                         )
                     else:
                         st.warning(
-                            f"Mensaje no pertinente: {msg.get('razon')} (Excluido de almacenamiento persistente)"
+                            f"Mensaje clasificado como no pertinente: {msg.get('razon')} (No almacenado en disco)"
                         )
 
-        # Entrada de texto del usuario
-        opinion_usuario = st.chat_input(f"Escribir opinion sobre {jugador_activo['nombre']} (5 a 1000 caracteres)...")
+        # Entrada de chat
+        prompt_placeholder = f"Escribir opinion sobre {jugador_activo['nombre']} (5 a 1000 caracteres)..."
+        opinion_usuario = st.chat_input(prompt_placeholder)
 
         if opinion_usuario is not None:
-            # 1. Validacion estricta de longitud
             try:
                 opinion_limpia = validar_longitud_opinion(opinion_usuario)
             except ValueError as ve:
@@ -281,11 +268,10 @@ def main():
                                 )
 
                     if not error_analisis and analisis is not None:
-                        # 2. Filtrado de pertinencia
                         if not analisis.es_pertinente:
                             st.warning(
-                                f"Opinion clasificada como no pertinente: {analisis.razon}. "
-                                "Siguiendo el contrato de datos, no se almacenara en opiniones.json."
+                                f"Opinion no pertinente: {analisis.razon}. "
+                                "Por las reglas del taller, no se almacenara en opiniones.json."
                             )
                             st.session_state.mensajes_chat.append({
                                 "rol": "user",
@@ -298,7 +284,6 @@ def main():
                                 "razon": analisis.razon,
                             })
                         else:
-                            # 3. Persistencia atomica
                             try:
                                 nuevo_registro = crear_registro(
                                     jugador=jugador_al_enviar,
@@ -357,7 +342,6 @@ def main():
             st.error(f"Error al leer el archivo de opiniones persistido: {exc}")
             todas_opiniones = []
 
-        # Controles de filtrado
         col_f1, col_f2, col_f3 = st.columns([1.5, 1.2, 1.3])
 
         with col_f1:
@@ -535,7 +519,7 @@ def main():
 
         try:
             datos_todas = cargar_opiniones(RUTA_OPINIONES_DEFAULT).get("opiniones", [])
-        except Exception:
+        except Exception as exc:
             datos_todas = []
 
         if not datos_todas:
