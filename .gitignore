@@ -1,0 +1,31 @@
+# Entorno local y credenciales
+.env
+*.env.local
+
+# Python cache y compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos temporales de persistencia atómica
+*.tmp
+datos/*.tmp
