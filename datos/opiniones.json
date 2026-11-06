@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "opiniones": [
+    {
+      "id": "e32c622a-7363-4f02-a3e7-53181108d858",
+      "fecha_utc": "2026-11-06T10:15:00+00:00",
+      "jugador_id": "j001",
+      "jugador_nombre": "Lionel Messi",
+      "opinion_original": "Su visión de juego y capacidad de pase son extraordinarias, define partidos con genialidad pura.",
+      "sentimiento": "positivo",
+      "razon": "La opinión elogia con admiración la visión de juego y la capacidad decisiva del futbolista.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "fecha_utc": "2026-11-06T10:20:00+00:00",
+      "jugador_id": "j001",
+      "jugador_nombre": "Lionel Messi",
+      "opinion_original": "Últimamente camina demasiado en la cancha y no colabora en la presión defensiva, su rendimiento fue decepcionante.",
+      "sentimiento": "negativo",
+      "razon": "El aficionado critica la falta de esfuerzo defensivo y califica el rendimiento de decepcionante.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "f5e4d3c2-b1a0-4987-9876-543210fedcba",
+      "fecha_utc": "2026-11-06T10:25:00+00:00",
+      "jugador_id": "j001",
+      "jugador_nombre": "Lionel Messi",
+      "opinion_original": "Es un jugador argentino que se desempeña como delantero y utiliza el dorsal número 10.",
+      "sentimiento": "neutro",
+      "razon": "El texto aporta datos puramente descriptivos y objetivos sobre su posición y nacionalidad sin valorar su nivel.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "98765432-10fe-4cba-8901-234567abcdef",
+      "fecha_utc": "2026-11-06T10:30:00+00:00",
+      "jugador_id": "j001",
+      "jugador_nombre": "Lionel Messi",
+      "opinion_original": "Tiene una calidad técnica innegable para asistir, pero en los tramos finales le falta intensidad física.",
+      "sentimiento": "mixto",
+      "razon": "Combina elogios a su técnica y visión con críticas explícitas a su intensidad física.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "11223344-5566-4778-8899-aabbccddeeff",
+      "fecha_utc": "2026-11-06T11:00:00+00:00",
+      "jugador_id": "j002",
+      "jugador_nombre": "Cristiano Ronaldo",
+      "opinion_original": "Su ética de trabajo, capacidad goleadora y disciplina atlética son un ejemplo para cualquier deportista.",
+      "sentimiento": "positivo",
+      "razon": "Expresa profunda admiración hacia su profesionalismo, disciplina y efectividad goleadora.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "22334455-6677-4889-99aa-bbccddeeff00",
+      "fecha_utc": "2026-11-06T11:05:00+00:00",
+      "jugador_id": "j002",
+      "jugador_nombre": "Cristiano Ronaldo",
+      "opinion_original": "Se queja constantemente con los árbitros y sus gestos hacia los compañeros perjudican el ambiente grupal.",
+      "sentimiento": "negativo",
+      "razon": "Critica sus constantes reclamos arbitrales y la actitud negativa percibida hacia sus compañeros.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "33445566-7788-499a-aabb-ccddeeff0011",
+      "fecha_utc": "2026-11-06T11:10:00+00:00",
+      "jugador_id": "j002",
+      "jugador_nombre": "Cristiano Ronaldo",
+      "opinion_original": "Nació en Funchal, Madeira, y ha competido en ligas profesionales de Inglaterra, España, Italia y Arabia Saudita.",
+      "sentimiento": "neutro",
+      "razon": "El comentario enumera antecedentes geográficos y trayectoria deportiva sin emitir juicio de valor.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "44556677-8899-4aab-bbcc-ddeeff001122",
+      "fecha_utc": "2026-11-06T11:15:00+00:00",
+      "jugador_id": "j002",
+      "jugador_nombre": "Cristiano Ronaldo",
+      "opinion_original": "Su salto y cabezazo siguen siendo letales en el área, aunque en el juego asociativo aporta muy poco.",
+      "sentimiento": "mixto",
+      "razon": "Elogia su contundencia en el remate aéreo al tiempo que critica su escasa participación asociativa.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "55667788-99aa-4bbc-ccdd-eeff00112233",
+      "fecha_utc": "2026-11-06T12:00:00+00:00",
+      "jugador_id": "j013",
+      "jugador_nombre": "Luis Díaz",
+      "opinion_original": "Su desequilibrio en el uno contra uno por la banda izquierda y su entrega incansable contagian a todo el equipo.",
+      "sentimiento": "positivo",
+      "razon": "Destaca favorablemente su capacidad de regate, sacrificio en el campo y energía positiva.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "66778899-aabb-4ccd-ddee-ff0011223344",
+      "fecha_utc": "2026-11-06T12:05:00+00:00",
+      "jugador_id": "j013",
+      "jugador_nombre": "Luis Díaz",
+      "opinion_original": "Qué magnífica definición frente al arco: mandó tres balones a las tribunas estando solo.",
+      "sentimiento": "negativo",
+      "razon": "Utiliza un tono irónico para criticar la falta de eficacia en la definición frente a la portería.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "778899aa-bbcc-4dde-eeff-001122334455",
+      "fecha_utc": "2026-11-06T12:10:00+00:00",
+      "jugador_id": "j013",
+      "jugador_nombre": "Luis Díaz",
+      "opinion_original": "El extremo colombiano disputó 90 minutos y fue amonestado con tarjeta amarilla en el segundo tiempo.",
+      "sentimiento": "neutro",
+      "razon": "Presenta hechos del partido de forma neutral e informativa sin calificaciones cualitativas.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "8899aabb-ccdd-4eef-ff00-112233445566",
+      "fecha_utc": "2026-11-06T12:15:00+00:00",
+      "jugador_id": "j013",
+      "jugador_nombre": "Luis Díaz",
+      "opinion_original": "Genera constante peligro con su velocidad, pero a menudo toma malas decisiones en el último pase.",
+      "sentimiento": "mixto",
+      "razon": "Valora su velocidad y capacidad de generar peligro, pero señala deficiencias en la toma de decisiones finales.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "99aabbcc-ddee-4ff0-0011-223344556677",
+      "fecha_utc": "2026-11-06T13:00:00+00:00",
+      "jugador_id": "j009",
+      "jugador_nombre": "Luka Modrić",
+      "opinion_original": "Un maestro del mediocampo, su golpe de tres dedos y control del ritmo del partido son arte puro.",
+      "sentimiento": "positivo",
+      "razon": "Manifiesta alta valoración artística hacia el talento, técnica y criterio táctico del futbolista.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "00aabbcc-ddee-4112-2233-445566778899",
+      "fecha_utc": "2026-11-06T13:05:00+00:00",
+      "jugador_id": "j009",
+      "jugador_nombre": "Luka Modrić",
+      "opinion_original": "Su despliegue físico ya no le permite competir en la élite y es una carga cuando el rival acelera.",
+      "sentimiento": "negativo",
+      "razon": "Critica severamente su desgaste físico y considera que compromete negativamente el rendimiento defensivo.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "aabbccdd-eeff-4223-3344-556677889900",
+      "fecha_utc": "2026-11-06T13:10:00+00:00",
+      "jugador_id": "j009",
+      "jugador_nombre": "Luka Modrić",
+      "opinion_original": "Es un centrocampista internacional con la selección de Croacia que debutó en el fútbol europeo a comienzos de siglo.",
+      "sentimiento": "neutro",
+      "razon": "Detalla datos biográficos y cronológicos neutrales sin apreciaciones favorables ni adversas.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    },
+    {
+      "id": "bbccddee-ff00-4334-4455-667788990011",
+      "fecha_utc": "2026-11-06T13:15:00+00:00",
+      "jugador_id": "j009",
+      "jugador_nombre": "Luka Modrić",
+      "opinion_original": "Conserva una inteligencia espacial formidable para distribuir, pero le cuesta recuperar balones en retroceso.",
+      "sentimiento": "mixto",
+      "razon": "Reconoce su inteligencia táctica para distribuir, pero advierte dificultades en tareas de recuperación defensiva.",
+      "modelo": "gpt-4o-mini",
+      "version_prompt": "1.0"
+    }
+  ]
+}
