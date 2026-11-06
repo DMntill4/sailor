@@ -29,3 +29,4 @@ htmlcov/
 # Archivos temporales de persistencia atómica
 *.tmp
 datos/*.tmp
+

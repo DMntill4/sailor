@@ -73,3 +73,4 @@ class RegistroOpinion(BaseModel):
     razon: str
     modelo: str
     version_prompt: str = "1.0"
+

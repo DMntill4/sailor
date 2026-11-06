@@ -279,3 +279,4 @@ def test_consultas_y_filtros():
     assert metricas["conteos"]["neutro"] == 1
     assert metricas["conteos"]["mixto"] == 0
     assert metricas["porcentajes"]["positivo"] == 50.0
+

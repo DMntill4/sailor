@@ -229,6 +229,89 @@ def guardar_opinion(ruta: str | Path, registro: dict[str, Any]) -> bool:
         raise IOError(f"Fallo durante la escritura atómica en {path_obj}: {exc}") from exc
 
 
+def actualizar_opinion(
+    ruta: str | Path,
+    opinion_id: str,
+    nuevo_sentimiento: str,
+    justificacion_cambio: str,
+) -> bool:
+    """Corrige manualmente una etiqueta conservando la clasificacion original y la auditoria.
+
+    Cumple con el desafio de ampliacion 3 del taller: permite la correccion
+    manual de etiquetas preservando el sentimiento y razon originales.
+
+    Args:
+        ruta: Ruta al archivo opiniones.json.
+        opinion_id: Identificador unico de la opinion a corregir.
+        nuevo_sentimiento: Nuevo sentimiento corregido ('positivo', 'negativo', 'neutro', 'mixto').
+        justificacion_cambio: Motivo o argumento de la rectificacion.
+
+    Returns:
+        True si la actualizacion y reemplazo atomico fueron exitosos.
+
+    Raises:
+        ValueError: Si el sentimiento es invalido o la opinion no se encuentra.
+    """
+    nuevo_sentimiento_norm = nuevo_sentimiento.lower().strip()
+    if nuevo_sentimiento_norm not in ("positivo", "negativo", "neutro", "mixto"):
+        raise ValueError(f"Sentimiento invalido para correccion: '{nuevo_sentimiento}'")
+
+    path_obj = Path(ruta)
+    estado = cargar_opiniones(path_obj)
+    opiniones = estado.get("opiniones", [])
+
+    encontrado = False
+    for op in opiniones:
+        if op.get("id") == opinion_id:
+            encontrado = True
+            # Preservar clasificacion original intacta en el primer cambio
+            if "clasificacion_original" not in op:
+                op["clasificacion_original"] = {
+                    "sentimiento": op.get("sentimiento"),
+                    "razon": op.get("razon"),
+                    "modelo": op.get("modelo"),
+                }
+
+            # Registrar en trazabilidad / auditoria
+            if "historial_ediciones" not in op:
+                op["historial_ediciones"] = []
+
+            op["historial_ediciones"].append({
+                "fecha_utc": datetime.now(timezone.utc).isoformat(),
+                "sentimiento_anterior": op.get("sentimiento"),
+                "sentimiento_nuevo": nuevo_sentimiento_norm,
+                "motivo": justificacion_cambio.strip(),
+            })
+
+            # Aplicar modificacion
+            op["sentimiento"] = nuevo_sentimiento_norm
+            break
+
+    if not encontrado:
+        raise ValueError(f"No se encontro ninguna opinion con el ID: '{opinion_id}'")
+
+    # Escritura atomica de la coleccion actualizada
+    directorio = path_obj.parent
+    prefijo = f".{path_obj.stem}_tmp_"
+    fd, temp_file_path = tempfile.mkstemp(prefix=prefijo, suffix=".tmp", dir=directorio)
+
+    try:
+        with open(fd, "w", encoding="utf-8") as temp_file:
+            json.dump(estado, temp_file, ensure_ascii=False, indent=2)
+            temp_file.flush()
+            os.fsync(temp_file.fileno())
+
+        os.replace(temp_file_path, path_obj)
+        return True
+    except Exception as exc:
+        if os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except OSError:
+                pass
+        raise IOError(f"Fallo durante la actualizacion atomica en {path_obj}: {exc}") from exc
+
+
 def consultar_opiniones(
     registros: list[dict[str, Any]],
     jugador_id: str | None = None,
@@ -302,3 +385,4 @@ def calcular_metricas(registros: list[dict[str, Any]]) -> dict[str, Any]:
         "conteos": conteos,
         "porcentajes": porcentajes,
     }
+

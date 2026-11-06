@@ -201,3 +201,4 @@ def crear_grafico_por_jugador(opiniones: list[dict]):
         .properties(height=320, title="Opiniones por Futbolista y Sentimiento")
     )
     return chart
+
