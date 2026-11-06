@@ -1,7 +1,8 @@
 """Módulo de análisis de sentimientos - Reexportación desde src.analisis."""
 
 from src.analisis import (  # noqa: F401
-    MODELO_DEFAULT,
+    MODELO_GEMINI_DEFAULT,
+    MODELO_OPENAI_DEFAULT,
     PROMPT_ANALISIS,
     PROMPT_HUMANO,
     PROMPT_SISTEMA,
@@ -16,7 +17,8 @@ from src.modelos import AnalisisOpinion  # noqa: F401
 
 __all__ = [
     "AnalisisOpinion",
-    "MODELO_DEFAULT",
+    "MODELO_GEMINI_DEFAULT",
+    "MODELO_OPENAI_DEFAULT",
     "PROMPT_ANALISIS",
     "PROMPT_HUMANO",
     "PROMPT_SISTEMA",

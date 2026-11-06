@@ -1,19 +1,17 @@
 """Módulo de análisis de sentimientos con LangChain para Tribuna Global.
 
-Implementa la construcción del prompt con roles mediante ChatPromptTemplate,
-la defensa contra prompt injection, el análisis de ironía/pertinencia y la
-salida estructurada mediante with_structured_output y Pydantic.
+Soporta Google Gemini (opción gratuita recomendada) y OpenAI con salida
+estructurada mediante with_structured_output y Pydantic, defensa contra
+inyecciones de prompt y evaluación contextual de ironía y pertinencia.
 """
 
 from __future__ import annotations
 
 import os
-import re
 from typing import Any, Mapping
 
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
 
 from src.modelos import AnalisisOpinion
 
@@ -21,7 +19,8 @@ from src.modelos import AnalisisOpinion
 load_dotenv()
 
 VERSION_PROMPT = "1.0"
-MODELO_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+MODELO_GEMINI_DEFAULT = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+MODELO_OPENAI_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # -----------------------------------------------------------------------------
 # Definición del Prompt con roles y criterios explícitos
@@ -64,37 +63,84 @@ PROMPT_ANALISIS = ChatPromptTemplate.from_messages([
 
 
 def obtener_modelo_llm(
+    proveedor: str = "auto",
     api_key: str | None = None,
     modelo_nombre: str | None = None,
     temperatura: float = 0.0,
-) -> ChatOpenAI:
-    """Configura e instancia el modelo de lenguaje de OpenAI.
+) -> Any:
+    """Configura e instancia el modelo de lenguaje (Google Gemini u OpenAI).
+
+    Soporta Google Gemini de forma predeterminada mediante su capa gratuita,
+    así como OpenAI como proveedor alternativo.
 
     Args:
-        api_key: Clave de OpenAI opcional (si es None, se lee de OPENAI_API_KEY).
-        modelo_nombre: Nombre del modelo a usar (default: gpt-4o-mini).
-        temperatura: Temperatura para la generación (default: 0.0 para determinismo).
+        proveedor: 'gemini', 'openai' o 'auto' para detección automática.
+        api_key: Clave de API opcional (si es None, se lee de variables de entorno).
+        modelo_nombre: Nombre del modelo a utilizar.
+        temperatura: Temperatura para la inferencia (0.0 por defecto para consistencia).
 
     Returns:
-        Instancia de ChatOpenAI configurada.
+        Instancia de ChatGoogleGenerativeAI o ChatOpenAI lista para LCEL.
+
+    Raises:
+        ValueError: Si no se encuentra una clave válida para el proveedor elegido.
     """
-    key = api_key or os.getenv("OPENAI_API_KEY")
-    if not key or key == "clave_configurada_localmente":
-        raise ValueError(
-            "No se ha configurado una clave válida de OpenAI. "
-            "Por favor proporciona tu OPENAI_API_KEY en el archivo .env o en la barra lateral."
+    key_gemini = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    key_openai = os.getenv("OPENAI_API_KEY")
+
+    # Detección automática según claves presentes
+    if proveedor == "auto":
+        if api_key:
+            # Si empieza con AIza generalmente es de Google
+            proveedor = "gemini" if api_key.startswith("AIza") else "openai"
+        elif key_gemini and key_gemini != "tu_clave_de_gemini_aqui":
+            proveedor = "gemini"
+        elif key_openai and key_openai != "clave_configurada_localmente":
+            proveedor = "openai"
+        else:
+            proveedor = "gemini"  # Proveedor predeterminado (gratuito)
+
+    prov_lower = proveedor.lower().strip()
+
+    if prov_lower == "gemini":
+        key = api_key or key_gemini
+        if not key or key == "tu_clave_de_gemini_aqui":
+            raise ValueError(
+                "No se ha configurado la clave de Google Gemini (GEMINI_API_KEY). "
+                "Agrega tu clave en el archivo .env o en la barra lateral. "
+                "Puedes obtener una clave gratuita en: https://aistudio.google.com/app/apikey"
+            )
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        modelo = modelo_nombre or MODELO_GEMINI_DEFAULT
+        return ChatGoogleGenerativeAI(
+            model=modelo,
+            google_api_key=key,
+            temperature=temperatura,
         )
 
-    modelo = modelo_nombre or os.getenv("OPENAI_MODEL", MODELO_DEFAULT)
-    return ChatOpenAI(
-        model=modelo,
-        temperature=temperatura,
-        openai_api_key=key,
-        max_retries=2,
-    )
+    elif prov_lower == "openai":
+        key = api_key or key_openai
+        if not key or key == "clave_configurada_localmente":
+            raise ValueError(
+                "No se ha configurado una clave válida de OpenAI (OPENAI_API_KEY). "
+                "Por favor proporciona tu OPENAI_API_KEY en el archivo .env o en la barra lateral."
+            )
+        from langchain_openai import ChatOpenAI
+
+        modelo = modelo_nombre or MODELO_OPENAI_DEFAULT
+        return ChatOpenAI(
+            model=modelo,
+            openai_api_key=key,
+            temperature=temperatura,
+            max_retries=2,
+        )
+
+    else:
+        raise ValueError(f"Proveedor de modelo desconocido: '{proveedor}'. Usa 'gemini' u 'openai'.")
 
 
-def construir_cadena_analisis(chat_model: ChatOpenAI):
+def construir_cadena_analisis(chat_model: Any):
     """Construye la cadena LCEL con salida estructurada Pydantic.
 
     Usa el operador tubería (|) para enlazar ChatPromptTemplate con
@@ -254,7 +300,7 @@ def analizar_opinion(
     Args:
         jugador: Diccionario del jugador (con clave 'nombre') o nombre en string.
         texto: Opinión sin procesar ingresada por el aficionado.
-        chat_model: Modelo de ChatOpenAI configurado o None para obtenerlo de entorno.
+        chat_model: Modelo de ChatGoogleGenerativeAI o ChatOpenAI configurado.
         usar_mock_si_falla_api: Si es True y la API no está configurada, utiliza el analizador mock.
 
     Returns:

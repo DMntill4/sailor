@@ -33,7 +33,8 @@ from src.almacenamiento import (  # noqa: E402
     guardar_opinion,
 )
 from src.analisis import (  # noqa: E402
-    MODELO_DEFAULT,
+    MODELO_GEMINI_DEFAULT,
+    MODELO_OPENAI_DEFAULT,
     VERSION_PROMPT,
     analizar_opinion,
     analizar_opinion_mock,
@@ -116,27 +117,59 @@ def main():
         st.divider()
         st.subheader("2. Configuración de IA")
 
-        api_key_env = os.getenv("OPENAI_API_KEY", "")
-        tiene_key_env = bool(api_key_env and api_key_env != "clave_configurada_localmente")
-
-        api_key_input = st.text_input(
-            "OpenAI API Key:",
-            value=api_key_env if tiene_key_env else "",
-            type="password",
-            help="Si no tienes API Key activa, puedes activar el 'Modo Demostración / Offline' abajo.",
-        )
-
-        modelo_seleccionado = st.selectbox(
-            "Modelo LLM:",
-            options=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+        proveedor_opcion = st.selectbox(
+            "Proveedor de IA:",
+            options=["Google Gemini (Gratuito)", "OpenAI"],
             index=0,
-            help="Se utiliza temperatura 0.0 para mayor estabilidad y consistencia.",
+            help="Google Gemini ofrece una capa gratuita oficial para desarrollo y pruebas.",
         )
+
+        es_gemini = "gemini" in proveedor_opcion.lower()
+
+        if es_gemini:
+            st.markdown(
+                "🔑 *Obtén tu clave gratuita en [Google AI Studio](https://aistudio.google.com/app/apikey)*"
+            )
+            gemini_key_env = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+            tiene_key_env = bool(gemini_key_env and gemini_key_env != "tu_clave_de_gemini_aqui")
+
+            api_key_input = st.text_input(
+                "Gemini API Key:",
+                value=gemini_key_env if tiene_key_env else "",
+                type="password",
+                help="Configurable en tu archivo .env como GEMINI_API_KEY.",
+            )
+
+            modelo_seleccionado = st.selectbox(
+                "Modelo Gemini:",
+                options=["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"],
+                index=0,
+                help="Se utiliza temperatura 0.0 para consistencia y menor variación.",
+            )
+            proveedor_str = "gemini"
+        else:
+            openai_key_env = os.getenv("OPENAI_API_KEY", "")
+            tiene_key_env = bool(openai_key_env and openai_key_env != "clave_configurada_localmente")
+
+            api_key_input = st.text_input(
+                "OpenAI API Key:",
+                value=openai_key_env if tiene_key_env else "",
+                type="password",
+                help="Configurable en tu archivo .env como OPENAI_API_KEY.",
+            )
+
+            modelo_seleccionado = st.selectbox(
+                "Modelo OpenAI:",
+                options=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+                index=0,
+                help="Se utiliza temperatura 0.0 para consistencia.",
+            )
+            proveedor_str = "openai"
 
         modo_offline = st.checkbox(
             "🧪 Modo Demostración (Motor Offline)",
             value=not tiene_key_env and not api_key_input,
-            help="Permite probar y evaluar todos los casos del taller de manera determinista sin consumir créditos de API.",
+            help="Permite probar y evaluar todos los casos del taller de manera determinista sin conexión a APIs.",
         )
 
         st.divider()
@@ -239,6 +272,7 @@ def main():
                         else:
                             try:
                                 chat_llm = obtener_modelo_llm(
+                                    proveedor=proveedor_str,
                                     api_key=api_key_input or None,
                                     modelo_nombre=modelo_seleccionado,
                                     temperatura=0.0,

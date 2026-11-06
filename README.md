@@ -68,6 +68,7 @@ Las versiones verificadas y utilizadas durante la construcción y ejecución son
 | **Python** | `3.12.3` | Entorno de ejecución base |
 | **Streamlit** | `1.67.0` | Framework de interfaz web reactiva |
 | **LangChain Core** | `1.7.6` | Construcción de prompts (`ChatPromptTemplate`) y tuberías LCEL |
+| **LangChain Google GenAI** | `4.4.3` | Integración oficial con modelos Google Gemini (Capa Gratuita) |
 | **LangChain OpenAI** | `1.7.4` | Integración con modelos ChatOpenAI y structured output |
 | **Pydantic** | `2.14.2` | Validación estricta de esquemas de datos de entrada/salida |
 | **Altair** | `6.2.2` | Visualización declarativa interactiva de datos |
@@ -100,18 +101,24 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Paso 4: Configurar la clave de OpenAI (Opcional)
-Crea tu archivo `.env` a partir de la plantilla:
+### Paso 4: Configurar tu API Key Gratuita de Google Gemini
+1. Obtén tu clave de API gratuita en [Google AI Studio](https://aistudio.google.com/app/apikey) (solo necesitas una cuenta de Google).
+2. Crea tu archivo `.env` a partir de la plantilla:
 ```bash
 cp .env.example .env
 ```
-Edita `.env` con tu clave de API:
+3. Edita `.env` y pega tu clave:
 ```env
-OPENAI_API_KEY=sk-tu-clave-aqui
+# Google Gemini (Gratuito - Recomendado)
+GEMINI_API_KEY=AIzaSy...tu_clave_aqui...
+GEMINI_MODEL=gemini-2.5-flash
+
+# OpenAI (Opcional)
+OPENAI_API_KEY=clave_configurada_localmente
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-> 💡 **Modo Demostración / Offline disponible:** Si no dispones de una clave de OpenAI activa o deseas ejecutar el taller sin gastar créditos de API, la aplicación incluye un **Modo Demostración (Motor Offline)** activable desde la barra lateral o automáticamente cuando no se detecta API Key. Este motor cubre con total precisión determinista todos los casos del taller.
+> 💡 **Modo Demostración / Offline disponible:** Si no configuras ninguna clave de API, la aplicación incluye un **Modo Demostración (Motor Offline)** activable desde la barra lateral o automáticamente cuando no se detectan credenciales. Este motor cubre con total precisión determinista todos los casos del taller.
 
 ### Paso 5: Iniciar la aplicación
 Ejecuta el servidor de Streamlit desde la raíz del proyecto:
