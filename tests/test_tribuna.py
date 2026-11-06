@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from src.almacenamiento import (
+    actualizar_opinion,
     calcular_metricas,
     cargar_jugadores,
     cargar_opiniones,
@@ -279,4 +280,36 @@ def test_consultas_y_filtros():
     assert metricas["conteos"]["neutro"] == 1
     assert metricas["conteos"]["mixto"] == 0
     assert metricas["porcentajes"]["positivo"] == 50.0
+
+
+def test_correccion_manual_etiqueta_auditoria(tmp_path):
+    """Valida la corrección manual de etiquetas preservando la clasificación original y la auditoría."""
+    archivo = tmp_path / "opiniones_auditoria.json"
+    jugador = {"id": "j001", "nombre": "Lionel Messi"}
+    analisis = AnalisisOpinion(
+        es_pertinente=True,
+        sentimiento="positivo",
+        razon="Jugador determinante.",
+    )
+    reg = crear_registro(jugador, "Qué precisión: falló todos los pases fáciles", analisis, "gpt-4o-mini")
+    guardar_opinion(archivo, reg)
+
+    # Corregir manualmente la etiqueta a 'negativo' indicando ironía
+    actualizar_opinion(
+        archivo,
+        reg["id"],
+        nuevo_sentimiento="negativo",
+        justificacion_cambio="El aficionado utilizó tono irónico no advertido inicialmente.",
+    )
+
+    estado = cargar_opiniones(archivo)
+    opinion_corregida = estado["opiniones"][0]
+
+    assert opinion_corregida["sentimiento"] == "negativo"
+    assert "clasificacion_original" in opinion_corregida
+    assert opinion_corregida["clasificacion_original"]["sentimiento"] == "positivo"
+    assert len(opinion_corregida["historial_ediciones"]) == 1
+    assert opinion_corregida["historial_ediciones"][0]["sentimiento_anterior"] == "positivo"
+    assert opinion_corregida["historial_ediciones"][0]["sentimiento_nuevo"] == "negativo"
+
 

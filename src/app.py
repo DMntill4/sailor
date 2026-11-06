@@ -1,8 +1,8 @@
-"""Aplicación principal Streamlit para Tribuna Global.
+"""Aplicacion principal Streamlit para Tribuna Global.
 
-Gestión de la interfaz interactiva para el registro de opiniones de aficionados
-sobre futbolistas internacionales, análisis semántico con LangChain y
-consulta estructurada con filtros, métricas y descarga de datos.
+Gestion de la interfaz tecnica para el registro de opiniones de aficionados
+sobre futbolistas internacionales, analisis semantico con LangChain y
+consulta estructurada con filtros, metricas y descarga de datos.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-# Asegurar que el directorio raíz y src estén en sys.path
+# Asegurar que el directorio raiz y src esten en sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
@@ -25,6 +25,7 @@ from src.almacenamiento import (  # noqa: E402
     DATOS_DIR,
     RUTA_JUGADORES_DEFAULT,
     RUTA_OPINIONES_DEFAULT,
+    actualizar_opinion,
     calcular_metricas,
     cargar_jugadores,
     cargar_opiniones,
@@ -45,8 +46,10 @@ from src.visualizaciones import (  # noqa: E402
     aplicar_estilos_personalizados,
     crear_grafico_distribucion,
     crear_grafico_por_jugador,
-    obtener_bandera,
+    obtener_codigo_pais,
+    renderizar_cabecera,
     renderizar_insignia_sentimiento,
+    renderizar_tarjeta_jugador,
 )
 
 
@@ -71,8 +74,8 @@ def formatear_fecha(iso_fecha: str) -> str:
 
 def main():
     st.set_page_config(
-        page_title="Tribuna Global | Percepción de Futbolistas",
-        page_icon="⚽",
+        page_title="Tribuna Global | Analisis de Percepcion",
+        page_icon=None,
         layout="wide",
         initial_sidebar_state="expanded",
     )
@@ -80,55 +83,55 @@ def main():
     aplicar_estilos_personalizados()
     inicializar_estado()
 
-    # Cargar catálogo de jugadores con manejo de errores
+    # Cargar catalogo de jugadores con manejo de errores
     try:
         jugadores = cargar_jugadores(RUTA_JUGADORES_DEFAULT)
     except Exception as exc:
-        st.error(f"❌ Error crítico al cargar el catálogo de futbolistas: {exc}")
+        st.error(f"Error critico al cargar el catalogo de futbolistas: {exc}")
         st.stop()
 
     # -------------------------------------------------------------------------
-    # Barra Lateral: Configuración y Selección
+    # Barra Lateral: Configuracion y Seleccion Tecnica
     # -------------------------------------------------------------------------
     with st.sidebar:
-        st.markdown("## 🏟️ Tribuna Global")
-        st.caption("Percepción de aficionados con IA y LangChain")
+        st.markdown("### Panel de Control")
+        st.caption("Configuracion de inferencia y parametros de sesion")
         st.divider()
 
-        st.subheader("1. Selección de Futbolista")
-        # Selector de futbolista mostrando nombre, bandera y país
+        st.markdown("**1. Futbolista Objetivo**")
+        # Selector de futbolista con codigo ISO formal (evita emojis de banderas que se rompen en Windows)
         opciones_jugadores = {
-            f"{obtener_bandera(j['pais'])} {j['nombre']} ({j['pais']})": j
+            f"[{obtener_codigo_pais(j['pais'])}] {j['nombre']} ({j['pais']})": j
             for j in jugadores
         }
         etiqueta_seleccionada = st.selectbox(
-            "Selecciona un jugador:",
+            "Seleccionar de catalogo:",
             options=list(opciones_jugadores.keys()),
             index=0,
-            help="El identificador interno del futbolista quedará capturado al enviar la opinión.",
+            help="El identificador interno del futbolista quedara capturado inmutablemente al enviar la opinion.",
+            label_visibility="collapsed",
         )
         jugador_activo = opciones_jugadores[etiqueta_seleccionada]
 
-        st.info(
-            f"**ID Interno:** `{jugador_activo['id']}`\n\n"
-            f"**País:** {jugador_activo['pais']} {obtener_bandera(jugador_activo['pais'])}"
+        st.caption(
+            f"ID de Registro: `{jugador_activo['id']}` | Pais: `{jugador_activo['pais']}` ({obtener_codigo_pais(jugador_activo['pais'])})"
         )
 
         st.divider()
-        st.subheader("2. Configuración de IA")
+        st.markdown("**2. Motor de Inferencia**")
 
         proveedor_opcion = st.selectbox(
-            "Proveedor de IA:",
-            options=["Google Gemini (Gratuito)", "OpenAI"],
+            "Proveedor de Modelo:",
+            options=["Google Gemini (Capa Gratuita)", "OpenAI"],
             index=0,
-            help="Google Gemini ofrece una capa gratuita oficial para desarrollo y pruebas.",
+            help="Google Gemini ofrece una capa gratuita oficial para desarrollo y experimentacion.",
         )
 
         es_gemini = "gemini" in proveedor_opcion.lower()
 
         if es_gemini:
             st.markdown(
-                "🔑 *Obtén tu clave gratuita en [Google AI Studio](https://aistudio.google.com/app/apikey)*"
+                "[Obtener API Key gratuita en Google AI Studio](https://aistudio.google.com/app/apikey)"
             )
             gemini_key_env = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
             tiene_key_env = bool(gemini_key_env and gemini_key_env != "tu_clave_de_gemini_aqui")
@@ -137,14 +140,14 @@ def main():
                 "Gemini API Key:",
                 value=gemini_key_env if tiene_key_env else "",
                 type="password",
-                help="Configurable en tu archivo .env como GEMINI_API_KEY.",
+                help="Configurable en el archivo .env como GEMINI_API_KEY.",
             )
 
             modelo_seleccionado = st.selectbox(
-                "Modelo Gemini:",
+                "Modelo LLM:",
                 options=["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"],
                 index=0,
-                help="Se utiliza temperatura 0.0 para consistencia y menor variación.",
+                help="Temperatura fijada a 0.0 para reproducibilidad determinista.",
             )
             proveedor_str = "gemini"
         else:
@@ -155,71 +158,62 @@ def main():
                 "OpenAI API Key:",
                 value=openai_key_env if tiene_key_env else "",
                 type="password",
-                help="Configurable en tu archivo .env como OPENAI_API_KEY.",
+                help="Configurable en el archivo .env como OPENAI_API_KEY.",
             )
 
             modelo_seleccionado = st.selectbox(
-                "Modelo OpenAI:",
+                "Modelo LLM:",
                 options=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
                 index=0,
-                help="Se utiliza temperatura 0.0 para consistencia.",
+                help="Temperatura fijada a 0.0 para reproducibilidad.",
             )
             proveedor_str = "openai"
 
         modo_offline = st.checkbox(
-            "🧪 Modo Demostración (Motor Offline)",
+            "Motor Offline (Modo Demostracion)",
             value=not tiene_key_env and not api_key_input,
-            help="Permite probar y evaluar todos los casos del taller de manera determinista sin conexión a APIs.",
+            help="Evalua deterministicamente los casos de prueba del taller sin llamadas externas a la API.",
         )
 
         st.divider()
-        # Botón de nueva conversación: limpia historial en memoria sin borrar archivo
-        if st.button("🗑️ Nueva conversación", use_container_width=True):
+        # Boton de nueva conversacion: limpia historial de sesion sin tocar JSON
+        if st.button("Nueva conversacion", use_container_width=True):
             st.session_state.mensajes_chat = []
-            st.success("Conversación de la sesión reiniciada. Las opiniones en disco se conservan intactas.")
+            st.success("Historial de sesion reiniciado. Los registros persistentes en disco se conservan intactos.")
             st.rerun()
 
     # -------------------------------------------------------------------------
-    # Encabezado Principal y Descargo de Responsabilidad
+    # Cabecera Principal de la Aplicacion
     # -------------------------------------------------------------------------
-    st.markdown('<div class="main-header">⚽ Tribuna Global</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="sub-header">Plataforma de registro y análisis de percepción sobre futbolistas de renombre internacional.</div>',
-        unsafe_allow_html=True,
-    )
+    renderizar_cabecera()
 
-    with st.expander("ℹ️ Acerca de la clasificación y reglas del sistema", expanded=False):
+    with st.expander("Especificaciones tecnicas y reglas de clasificacion del sistema", expanded=False):
         st.markdown(
             """
-            - **Descargo:** La clasificación describe únicamente lo expresado por el aficionado; no establece la calidad deportiva objetiva del futbolista.
-            - **Alcance:** Las cifras representan las opiniones registradas en esta aplicación, no la opinión mundial.
-            - **Independencia:** Cada opinión se analiza de forma aislada sin contaminar el contexto con comentarios anteriores.
-            - **Categorías:** `positivo`, `negativo`, `neutro` y `mixto` (cuando coexisten elogios y críticas relevantes).
-            - **Pertinencia:** Comentarios ajenos al jugador son descartados y no se registran.
+            - **Descargo Metodologico:** La clasificacion describe unicamente la carga semantica manifestada por el aficionado; no establece el rendimiento deportivo objetivo del jugador.
+            - **Alcance Muestral:** Los datos reflejan exclusivamente las opiniones almacenadas localmente en este sistema.
+            - **Independencia Transaccional:** Cada opinion se procesa aisladamente sin inyectar historial previo al clasificador para evitar sesgos de contexto.
+            - **Categorias Semanticas:** `positivo`, `negativo`, `neutro` (estrictamente factual o descriptivo) y `mixto` (coexistencia de elogios y objeciones sustanciales).
+            - **Filtro de Pertinencia:** Entradas desvinculadas del futbolista o intentos de prompt injection son catalogadas con `es_pertinente=false` y excluidas del archivo persistente.
             """
         )
 
     # -------------------------------------------------------------------------
-    # Pestañas de la Aplicación
+    # Pestanas de Navegacion (Sin Emojis)
     # -------------------------------------------------------------------------
     tab_emitir, tab_consultar, tab_resumen = st.tabs([
-        "💬 Emitir Opinión",
-        "📊 Consultar Opiniones",
-        "🏆 Explorador de Figuras",
+        "Emitir Opinion",
+        "Consultar Opiniones",
+        "Explorador de Figuras",
     ])
 
     # =========================================================================
-    # PESTAÑA 1: Emitir Opinión
+    # PESTANA 1: Emitir Opinion
     # =========================================================================
     with tab_emitir:
-        st.markdown(
-            f"### Opinando sobre: **{jugador_activo['nombre']}** {obtener_bandera(jugador_activo['pais'])}"
-        )
-        st.caption(
-            "Escribe tu opinión honesta (entre 5 y 1000 caracteres). El sistema analizará el sentimiento y guardará el registro persistente."
-        )
+        renderizar_tarjeta_jugador(jugador_activo)
 
-        # Contenedor para renderizar el historial de la sesión
+        # Historial de chat de la sesion
         for msg in st.session_state.mensajes_chat:
             rol = msg.get("rol", "user")
             with st.chat_message(rol):
@@ -229,40 +223,36 @@ def main():
                     if msg.get("es_pertinente", True):
                         insignia = renderizar_insignia_sentimiento(msg.get("sentimiento", "neutro"))
                         st.markdown(
-                            f"{insignia} &nbsp; **Análisis:** {msg.get('razon')}",
+                            f"{insignia} &nbsp; **Analisis:** {msg.get('razon')}",
                             unsafe_allow_html=True,
                         )
                         st.caption(
-                            f"Registro ID: `{msg.get('id', 'N/A')}` | Modelo: `{msg.get('modelo', 'N/A')}`"
+                            f"ID: `{msg.get('id', 'N/A')}` | Modelo: `{msg.get('modelo', 'N/A')}`"
                         )
                     else:
                         st.warning(
-                            f"⚠️ **Mensaje no pertinente:** {msg.get('razon')}\n\n*(Este mensaje no fue almacenado en los registros)*"
+                            f"Mensaje no pertinente: {msg.get('razon')} (Excluido de almacenamiento persistente)"
                         )
 
-        # Entrada de chat del usuario
-        prompt_placeholder = f"Escribe tu opinión sobre {jugador_activo['nombre']}..."
-        opinion_usuario = st.chat_input(prompt_placeholder)
+        # Entrada de texto del usuario
+        opinion_usuario = st.chat_input(f"Escribir opinion sobre {jugador_activo['nombre']} (5 a 1000 caracteres)...")
 
         if opinion_usuario is not None:
-            # 1. Validación de longitud de entrada (5 a 1000 caracteres)
+            # 1. Validacion estricta de longitud
             try:
                 opinion_limpia = validar_longitud_opinion(opinion_usuario)
             except ValueError as ve:
-                st.warning(f"⚠️ {ve}")
+                st.warning(str(ve))
                 opinion_limpia = None
 
             if opinion_limpia:
-                # Mostrar el mensaje del usuario inmediatamente en la sesión
                 with st.chat_message("user"):
                     st.markdown(f"**Para {jugador_activo['nombre']}:** {opinion_limpia}")
 
-                # Capturar los datos del jugador en el momento exacto del envío
                 jugador_al_enviar = dict(jugador_activo)
 
-                # Realizar el análisis de sentimiento
                 with st.chat_message("assistant"):
-                    with st.spinner("Analizando semántica y sentimiento de la opinión..."):
+                    with st.spinner("Procesando clasificacion semantica con LCEL..."):
                         error_analisis = False
                         analisis = None
 
@@ -286,16 +276,16 @@ def main():
                             except Exception as exc:
                                 error_analisis = True
                                 st.error(
-                                    f"❌ **Error en la clasificación del modelo:** {exc}\n\n"
-                                    "No se generó un sentimiento inventado y el registro NO fue guardado."
+                                    f"Fallo en la inferencia del modelo estructurado: {exc}\n\n"
+                                    "No se creo un registro artificial y la persistencia no fue ejecutada."
                                 )
 
                     if not error_analisis and analisis is not None:
-                        # 2. Evaluación de pertinencia
+                        # 2. Filtrado de pertinencia
                         if not analisis.es_pertinente:
                             st.warning(
-                                f"⚠️ **Opinión no pertinente:** {analisis.razon}\n\n"
-                                "Por las reglas del sistema, no se registrará como opinión válida."
+                                f"Opinion clasificada como no pertinente: {analisis.razon}. "
+                                "Siguiendo el contrato de datos, no se almacenara en opiniones.json."
                             )
                             st.session_state.mensajes_chat.append({
                                 "rol": "user",
@@ -308,7 +298,7 @@ def main():
                                 "razon": analisis.razon,
                             })
                         else:
-                            # 3. Creación y guardado seguro del registro persistente
+                            # 3. Persistencia atomica
                             try:
                                 nuevo_registro = crear_registro(
                                     jugador=jugador_al_enviar,
@@ -322,17 +312,16 @@ def main():
                                 )
 
                                 if guardado_ok:
-                                    st.toast("✅ ¡Opinión guardada exitosamente en el archivo persistente!", icon="💾")
+                                    st.toast("Opinion persistida satisfactoriamente.")
                                     insignia = renderizar_insignia_sentimiento(analisis.sentimiento)
                                     st.markdown(
-                                        f"{insignia} &nbsp; **Análisis:** {analisis.razon}",
+                                        f"{insignia} &nbsp; **Analisis:** {analisis.razon}",
                                         unsafe_allow_html=True,
                                     )
                                     st.caption(
-                                        f"ID: `{nuevo_registro['id']}` | Fecha: `{formatear_fecha(nuevo_registro['fecha_utc'])}`"
+                                        f"UUID: `{nuevo_registro['id']}` | Timestamp: `{formatear_fecha(nuevo_registro['fecha_utc'])}`"
                                     )
 
-                                    # Agregar a la memoria de la sesión
                                     st.session_state.mensajes_chat.append({
                                         "rol": "user",
                                         "jugador_nombre": jugador_al_enviar["nombre"],
@@ -348,25 +337,24 @@ def main():
                                     })
                             except Exception as err_guardado:
                                 st.error(
-                                    f"❌ **Error al persistir el registro:** {err_guardado}\n\n"
-                                    "No se emitió confirmación de guardado. Tu opinión original se conserva en pantalla para evitar pérdida."
+                                    f"Fallo en la persistencia transaccional: {err_guardado}\n\n"
+                                    "No se confirmo el guardado. Tu entrada se conserva en pantalla para su recuperacion."
                                 )
 
     # =========================================================================
-    # PESTAÑA 2: Consultar Opiniones
+    # PESTANA 2: Consultar Opiniones
     # =========================================================================
     with tab_consultar:
-        st.markdown("### 📊 Consultas y Auditoría de Opiniones")
+        st.markdown("### Consultas y Auditoria de Registros")
         st.caption(
-            "Filtra y explora las opiniones persistidas en disco. Esta sección opera completamente en memoria sin invocar al modelo LLM."
+            "Filtrado y agregacion en memoria de los registros persistidos. Cero consumo de tokens durante la consulta."
         )
 
-        # Cargar opiniones persistidas
         try:
             datos_persistidos = cargar_opiniones(RUTA_OPINIONES_DEFAULT)
             todas_opiniones = datos_persistidos.get("opiniones", [])
         except Exception as exc:
-            st.error(f"❌ Error al leer el archivo de opiniones persistido: {exc}")
+            st.error(f"Error al leer el archivo de opiniones persistido: {exc}")
             todas_opiniones = []
 
         # Controles de filtrado
@@ -391,12 +379,11 @@ def main():
 
         with col_f3:
             filtro_texto = st.text_input(
-                "Buscar en texto o razón:",
+                "Buscar por termino:",
                 value="",
-                placeholder="Ej. visión, pases, velocidad...",
+                placeholder="Filtrar texto original o justificacion...",
             )
 
-        # Determinar ID del jugador si se seleccionó uno específico
         id_jugador_filtro = None
         if filtro_jugador_nombre != "Todos los futbolistas":
             for j in jugadores:
@@ -406,7 +393,6 @@ def main():
 
         sentimiento_param = None if filtro_sentimiento == "Todos" else filtro_sentimiento
 
-        # Ejecutar consulta en memoria sin llamadas al LLM
         opiniones_filtradas = consultar_opiniones(
             todas_opiniones,
             jugador_id=id_jugador_filtro,
@@ -414,28 +400,26 @@ def main():
             busqueda_texto=filtro_texto,
         )
 
-        # Métricas resumidas
         metricas = calcular_metricas(opiniones_filtradas)
         total_f = metricas["total"]
         conteos = metricas["conteos"]
         pcts = metricas["porcentajes"]
 
-        st.markdown("#### Métricas del subconjunto consultado")
+        st.markdown("#### Metricas del Subconjunto Consultado")
         m_c1, m_c2, m_c3, m_c4, m_c5 = st.columns(5)
         with m_c1:
-            st.metric("Total Opiniones", total_f)
+            st.metric("Total Registros", total_f)
         with m_c2:
-            st.metric("🟢 Positivas", f"{conteos['positivo']} ({pcts['positivo']}%)")
+            st.metric("Positivas", f"{conteos['positivo']} ({pcts['positivo']}%)")
         with m_c3:
-            st.metric("🔴 Negativas", f"{conteos['negativo']} ({pcts['negativo']}%)")
+            st.metric("Negativas", f"{conteos['negativo']} ({pcts['negativo']}%)")
         with m_c4:
-            st.metric("🔵 Neutras", f"{conteos['neutro']} ({pcts['neutro']}%)")
+            st.metric("Neutras", f"{conteos['neutro']} ({pcts['neutro']}%)")
         with m_c5:
-            st.metric("🟡 Mixtas", f"{conteos['mixto']} ({pcts['mixto']}%)")
+            st.metric("Mixtas", f"{conteos['mixto']} ({pcts['mixto']}%)")
 
         st.divider()
 
-        # Gráficas interactivas
         if opiniones_filtradas:
             g_col1, g_col2 = st.columns([1, 1.4])
             with g_col1:
@@ -449,7 +433,6 @@ def main():
 
             st.divider()
 
-            # Botones de descarga
             d_col1, d_col2 = st.columns([1, 1])
             with d_col1:
                 json_data = json.dumps(
@@ -458,7 +441,7 @@ def main():
                     indent=2,
                 )
                 st.download_button(
-                    label="📥 Descargar resultados como JSON",
+                    label="Exportar Dataset Filtrado (JSON)",
                     data=json_data,
                     file_name="opiniones_filtradas.json",
                     mime="application/json",
@@ -468,48 +451,86 @@ def main():
                 df_export = pd.DataFrame(opiniones_filtradas)
                 csv_data = df_export.to_csv(index=False).encode("utf-8")
                 st.download_button(
-                    label="📥 Descargar resultados como CSV",
+                    label="Exportar Dataset Filtrado (CSV)",
                     data=csv_data,
                     file_name="opiniones_filtradas.csv",
                     mime="text/csv",
                     use_container_width=True,
                 )
 
-            st.markdown(f"#### Listado de opiniones ({total_f} registros)")
+            st.markdown(f"#### Registros Persistidos ({total_f})")
 
-            # Renderizar tarjetas de opiniones
             for op in reversed(opiniones_filtradas):
                 with st.container():
                     st.markdown(
                         f"""
-                        <div class="opinion-card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <strong>⚽ {op.get('jugador_nombre')}</strong>
+                        <div class="opinion-card-tech">
+                            <div class="opinion-card-header">
+                                <span class="opinion-card-player">{op.get('jugador_nombre')} &middot; ID: <code>{op.get('jugador_id')}</code></span>
                                 {renderizar_insignia_sentimiento(op.get('sentimiento', 'neutro'))}
                             </div>
-                            <p style="font-size: 1rem; color: #1E293B; margin-bottom: 0.5rem;">
-                                <em>«{op.get('opinion_original')}»</em>
+                            <p class="opinion-card-text">
+                                &laquo;{op.get('opinion_original')}&raquo;
                             </p>
-                            <p style="font-size: 0.88rem; color: #475569; margin-bottom: 0.3rem;">
-                                <strong>Justificación:</strong> {op.get('razon')}
-                            </p>
-                            <div style="font-size: 0.75rem; color: #94A3B8;">
-                                ID: <code>{op.get('id')}</code> | Fecha: {formatear_fecha(op.get('fecha_utc'))} | Modelo: {op.get('modelo')}
+                            <div class="opinion-card-reason">
+                                <strong>Justificacion:</strong> {op.get('razon')}
+                            </div>
+                            <div class="opinion-card-meta">
+                                <span>UUID: {op.get('id')}</span>
+                                <span>Fecha: {formatear_fecha(op.get('fecha_utc'))}</span>
+                                <span>Modelo: {op.get('modelo')}</span>
                             </div>
                         </div>
                         """,
                         unsafe_allow_html=True,
                     )
+
+                    if "clasificacion_original" in op:
+                        orig = op["clasificacion_original"]
+                        st.caption(
+                            f"Registro rectificado manualmente (Original: {orig.get('sentimiento')})"
+                        )
+
+                    # Desafio de ampliacion: Correccion manual con auditoria
+                    with st.expander(f"Rectificar clasificacion de {op.get('id')[:8]}"):
+                        c_col1, c_col2 = st.columns([1, 2])
+                        sentimientos_opciones = ["positivo", "negativo", "neutro", "mixto"]
+                        idx_actual = sentimientos_opciones.index(op.get("sentimiento", "positivo")) if op.get("sentimiento") in sentimientos_opciones else 0
+                        with c_col1:
+                            nuevo_s = st.selectbox(
+                                "Nuevo sentimiento:",
+                                options=sentimientos_opciones,
+                                index=idx_actual,
+                                key=f"sel_{op.get('id')}",
+                            )
+                        with c_col2:
+                            motivo = st.text_input(
+                                "Justificacion tecnica:",
+                                placeholder="Indicar argumento de la rectificacion manual...",
+                                key=f"mot_{op.get('id')}",
+                            )
+                        if st.button("Guardar rectificacion", key=f"btn_{op.get('id')}"):
+                            if motivo.strip():
+                                actualizar_opinion(
+                                    RUTA_OPINIONES_DEFAULT,
+                                    op.get("id"),
+                                    nuevo_s,
+                                    motivo,
+                                )
+                                st.toast("Clasificacion actualizada y registrada en trazabilidad.")
+                                st.rerun()
+                            else:
+                                st.warning("Se requiere ingresar una justificacion para registrar el cambio.")
         else:
-            st.info("ℹ️ No se encontraron opiniones que coincidan con los filtros seleccionados.")
+            st.info("No se hallaron opiniones que satisfagan los criterios de filtro activos.")
 
     # =========================================================================
-    # PESTAÑA 3: Explorador de Figuras (x100 cooler)
+    # PESTANA 3: Explorador de Figuras
     # =========================================================================
     with tab_resumen:
-        st.markdown("### 🏆 Explorador y Análisis de Figuras")
+        st.markdown("### Explorador Agregado de Figuras")
         st.caption(
-            "Visión panorámica de la percepción de cada futbolista según los registros de la aplicación."
+            "Consolidacion de metricas de aprobacion calculadas a partir de las opiniones registradas."
         )
 
         try:
@@ -518,7 +539,7 @@ def main():
             datos_todas = []
 
         if not datos_todas:
-            st.warning("No hay opiniones registradas para generar el análisis comparativo.")
+            st.warning("No se registran opiniones persistidas para computar la matriz comparativa.")
         else:
             df_todas = pd.DataFrame(datos_todas)
             resumen_jugador = (
@@ -533,7 +554,7 @@ def main():
                 .reset_index()
             )
 
-            resumen_jugador["% Aprobación"] = (
+            resumen_jugador["Tasa_Aprobacion"] = (
                 (resumen_jugador["Positivas"] / resumen_jugador["Total"]) * 100
             ).round(1)
 
@@ -541,13 +562,13 @@ def main():
                 resumen_jugador.sort_values(by="Total", ascending=False),
                 column_config={
                     "jugador_nombre": "Futbolista",
-                    "Total": st.column_config.NumberColumn("Opiniones"),
-                    "Positivas": st.column_config.NumberColumn("🟢 Positivas"),
-                    "Negativas": st.column_config.NumberColumn("🔴 Negativas"),
-                    "Neutras": st.column_config.NumberColumn("🔵 Neutras"),
-                    "Mixtas": st.column_config.NumberColumn("🟡 Mixtas"),
-                    "% Aprobación": st.column_config.ProgressColumn(
-                        "Tasa de Aprobación",
+                    "Total": st.column_config.NumberColumn("Muestra"),
+                    "Positivas": st.column_config.NumberColumn("Positivas"),
+                    "Negativas": st.column_config.NumberColumn("Negativas"),
+                    "Neutras": st.column_config.NumberColumn("Neutras"),
+                    "Mixtas": st.column_config.NumberColumn("Mixtas"),
+                    "Tasa_Aprobacion": st.column_config.ProgressColumn(
+                        "Tasa de Aprobacion",
                         format="%.1f%%",
                         min_value=0,
                         max_value=100,
