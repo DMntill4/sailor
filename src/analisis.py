@@ -19,7 +19,7 @@ from src.modelos import AnalisisOpinion
 load_dotenv()
 
 VERSION_PROMPT = "1.0"
-MODELO_GEMINI_DEFAULT = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+MODELO_GEMINI_DEFAULT = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 MODELO_OPENAI_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # -----------------------------------------------------------------------------
@@ -341,6 +341,25 @@ def analizar_opinion(
         return resultado
 
     except Exception as exc:
+        err_str = str(exc).lower()
+        # Fallback inteligente si el modelo especificado fue deprecado (404) o tiene sobrecarga temporal (503)
+        if ("404" in err_str or "503" in err_str or "no longer available" in err_str or "unavailable" in err_str) and hasattr(chat_model, "model") and chat_model.model != "gemini-3.5-flash":
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                fallback_model = ChatGoogleGenerativeAI(
+                    model="gemini-3.5-flash",
+                    google_api_key=getattr(chat_model, "google_api_key", None) or os.getenv("GEMINI_API_KEY"),
+                    temperature=0.0,
+                )
+                cadena_fallback = construir_cadena_analisis(fallback_model)
+                res_fallback = cadena_fallback.invoke({"jugador": nombre_jugador, "opinion": texto_limpio})
+                if isinstance(res_fallback, dict):
+                    return AnalisisOpinion(**res_fallback)
+                elif isinstance(res_fallback, AnalisisOpinion):
+                    return res_fallback
+            except Exception:
+                pass
+
         if usar_mock_si_falla_api:
             return analizar_opinion_mock(nombre_jugador, texto_limpio)
         raise exc

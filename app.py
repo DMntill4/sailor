@@ -161,7 +161,7 @@ def main():
 
             modelo_seleccionado = st.selectbox(
                 "Modelo Gemini:",
-                options=["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"],
+                options=["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"],
                 index=0,
             )
             proveedor_str = "gemini"
