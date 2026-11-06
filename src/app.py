@@ -21,6 +21,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+CODIGOS_PAISES: dict[str, str] = {
+    "Argentina": "ARG",
+    "Portugal": "POR",
+    "Brasil": "BRA",
+    "Francia": "FRA",
+    "Noruega": "NOR",
+    "Egipto": "EGY",
+    "Polonia": "POL",
+    "Croacia": "CRO",
+    "Bélgica": "BEL",
+    "Uruguay": "URU",
+    "Colombia": "COL",
+    "Corea del Sur": "KOR",
+    "Senegal": "SEN",
+}
+
+
+def obtener_codigo_pais(pais: str) -> str:
+    """Retorna el codigo ISO de 3 letras del pais."""
+    return CODIGOS_PAISES.get(pais.strip(), pais.strip()[:3].upper())
+
+
 from src.almacenamiento import (  # noqa: E402
     RUTA_JUGADORES_DEFAULT,
     RUTA_OPINIONES_DEFAULT,
@@ -43,7 +65,6 @@ from src.visualizaciones import (  # noqa: E402
     aplicar_estilos_personalizados,
     crear_grafico_distribucion,
     crear_grafico_por_jugador,
-    obtener_codigo_pais,
     renderizar_cabecera,
     renderizar_insignia_sentimiento,
     renderizar_tarjeta_jugador,

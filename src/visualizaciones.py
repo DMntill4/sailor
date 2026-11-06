@@ -103,6 +103,10 @@ def obtener_codigo_pais(pais: str) -> str:
     return CODIGOS_PAISES.get(pais.strip(), pais.strip()[:3].upper())
 
 
+# Alias de retrocompatibilidad
+obtener_bandera = obtener_codigo_pais
+
+
 def aplicar_estilos_personalizados():
     """Inyecta estilos CSS tecnicos de alta fidelidad compatibles con Dark Mode y Light Mode."""
     st.markdown(
