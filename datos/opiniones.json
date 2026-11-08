@@ -176,7 +176,17 @@
       "razon": "Reconoce su inteligencia táctica para distribuir, pero advierte dificultades en tareas de recuperación defensiva.",
       "modelo": "gpt-4o-mini",
       "version_prompt": "1.0"
+    },
+    {
+      "id": "7dd33638-02c5-43af-95fe-33b740291484",
+      "fecha_utc": "2026-11-06T13:55:38.297059+00:00",
+      "jugador_id": "j001",
+      "jugador_nombre": "Lionel Messi",
+      "opinion_original": "Opino que cristiano es mejor",
+      "sentimiento": "negativo",
+      "razon": "El aficionado expresa un juicio desfavorable hacia Messi al valorarlo por debajo de otro futbolista en la comparación.",
+      "modelo": "gemini-3.5-flash",
+      "version_prompt": "1.0"
     }
   ]
 }
-
