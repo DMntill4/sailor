@@ -27,3 +27,4 @@ datos/*.tmp
 # Documentacion pesada o artefactos
 .vscode/
 .idea/
+

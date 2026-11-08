@@ -39,3 +39,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 
 # Comando de inicio del servidor
 CMD ["streamlit", "run", "app.py"]
+

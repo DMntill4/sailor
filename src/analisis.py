@@ -119,6 +119,7 @@ def obtener_modelo_llm(
             model=modelo,
             google_api_key=key,
             temperature=temperatura,
+            max_retries=2,
         )
 
     elif prov_lower == "openai":
@@ -194,11 +195,17 @@ def analizar_opinion_mock(jugador_nombre: str, texto: str) -> AnalisisOpinion:
     t_lower = texto_limpio.lower()
 
     # Inyección de instrucciones o mensajes ajenos
-    if "capital de francia" in t_lower or "paris" in t_lower or "la receta" in t_lower:
+    if (
+        "capital de francia" in t_lower
+        or "paris" in t_lower
+        or "receta" in t_lower
+        or "harina" in t_lower
+        or "clima" in t_lower
+    ):
         return AnalisisOpinion(
             es_pertinente=False,
             sentimiento=None,
-            razon="El texto hace referencia a geografía o temas completamente ajenos al futbolista seleccionado.",
+            razon="El texto hace referencia a temas completamente ajenos al futbolista seleccionado (gastronomía, geografía, etc.).",
         )
 
     if (
@@ -207,21 +214,25 @@ def analizar_opinion_mock(jugador_nombre: str, texto: str) -> AnalisisOpinion:
         or "si eres una ia" in t_lower
         or "si eres un asistente" in t_lower
         or "system override" in t_lower
+        or "end of review" in t_lower
+        or "instrucción de administración" in t_lower
+        or "instruccion de administracion" in t_lower
     ):
         return AnalisisOpinion(
             es_pertinente=False,
             sentimiento=None,
-            razon="El texto intenta ejecutar instrucciones al sistema en lugar de opinar sobre el futbolista.",
+            razon="El texto intenta ejecutar instrucciones al sistema o prompt injection en lugar de opinar sobre el futbolista.",
         )
 
-    # Detección de ironía
-    if ("qué precisión" in t_lower or "que precision" in t_lower) and (
-        "falló" in t_lower or "fallo" in t_lower or "tribuna" in t_lower
-    ):
+    # Detección de ironía y sarcasmo
+    if (
+        ("qué precisión" in t_lower or "que precision" in t_lower or "qué golazo" in t_lower or "que golazo" in t_lower)
+        and ("falló" in t_lower or "fallo" in t_lower or "tribuna" in t_lower or "propia portería" in t_lower or "propia porteria" in t_lower)
+    ) or ("estatua" in t_lower and "retroceder" in t_lower):
         return AnalisisOpinion(
             es_pertinente=True,
             sentimiento="negativo",
-            razon="El aficionado utiliza un tono irónico para criticar la evidente falta de precisión del futbolista.",
+            razon="El aficionado utiliza un tono irónico o metafórico para criticar el bajo rendimiento o los errores del futbolista.",
         )
 
     # Mixto (elogio + crítica)
