@@ -1,0 +1,29 @@
+# Control de versiones
+.git
+.gitignore
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Cache de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Variables de entorno secretas (se pasan mediante docker-compose o flag -e)
+.env
+*.env.local
+
+# Archivos temporales de persistencia atómica
+*.tmp
+datos/*.tmp
+
+# Documentacion pesada o artefactos
+.vscode/
+.idea/

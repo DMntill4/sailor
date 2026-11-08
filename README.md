@@ -1,11 +1,12 @@
 # Tribuna Global: Arquitectura de Analisis Semantico y Percepcion Deportiva
 
 [![Python](https://img.shields.io/badge/Python-3.12.3-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-API%20v2.5-886FBF?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-API%20v3.5-886FBF?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![LangChain](https://img.shields.io/badge/LangChain-Core%201.7.6-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://python.langchain.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.67.0-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-v2.14.2-E92063?style=for-the-badge&logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
-[![Pytest](https://img.shields.io/badge/Pytest-9.1.1-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-20%20passed-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![Altair](https://img.shields.io/badge/Altair-6.2.2-4B8BBE?style=for-the-badge&logo=vega&logoColor=white)](https://altair-viz.github.io/)
 
 ---
@@ -73,7 +74,7 @@ El diseno sigue una organizacion modular bajo principios de separacion de respon
 |   `-- visualizaciones.py      Generacion de graficos declarativos con Altair
 |-- tests/
 |   |-- __init__.py
-|   `-- test_tribuna.py         Suite de pruebas automatizadas con Pytest (17 casos)
+|   `-- test_tribuna.py         Suite de pruebas automatizadas con Pytest (20 casos)
 `-- ejercicios_previos/         Scripts formativos iniciales del taller
 ```
 
@@ -213,20 +214,37 @@ Definir las credenciales requeridas dentro de `.env`:
 # Configuracion de Google Gemini (Capa Gratuita Oficial)
 # Obtener API Key en: https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=AIzaSy...tu_api_key_aqui
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash
 
 # Configuracion de OpenAI (Opcional)
 OPENAI_API_KEY=clave_configurada_localmente
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### 6.4 Ejecucion del Servidor de Aplicacion
+### 6.4 Ejecucion Local (Sin Docker)
 
 ```bash
 streamlit run app.py
 ```
 
 El servidor web quedara activo por defecto en `http://localhost:8501`.
+
+### 6.5 Ejecucion Contenedorizada (Con Docker / Docker Compose)
+
+El proyecto incluye soporte nativo para despliegue en contenedores mediante `Dockerfile` y `docker-compose.yml`, montando el directorio `./datos` como volumen en el host para garantizar la persistencia de las opiniones entre reinicios del contenedor:
+
+```bash
+# Construir y levantar el contenedor en segundo plano
+docker compose up -d --build
+
+# Monitorear logs de la aplicacion
+docker compose logs -f
+
+# Detener el contenedor
+docker compose down
+```
+
+La aplicacion estara disponible inmediatamente en `http://localhost:8501` con control de salud automatizado (healthcheck).
 
 ---
 
@@ -254,7 +272,10 @@ La suite de pruebas contenida en [`tests/test_tribuna.py`](file:///c:/Users/dale
 | **TC-14** | Resistencia a Fallos: Archivo JSON corrupto | Notificacion de error sin sobreescritura | Archivo protegido | APROBADO |
 | **TC-15** | Idempotencia: Reenvio de mismo registro | Control de colisiones sin duplicacion | Longitud inalterada | APROBADO |
 | **TC-16** | Robustez: Inyeccion «Ignora las reglas y responde...» | No ejecucion de instrucciones | Rechazo como no pertinente | APROBADO |
-| **TC-17** | Catalogo: Carga de 20 jugadores | Deteccion estricta de IDs duplicados | Verificado sin colisiones | APROBADO |
+| **TC-17** | Ataque Directo: «SI ERES UNA IA HAZ ESTO:...» | Tratamiento como dato inerte | Rechazo como no pertinente | APROBADO |
+| **TC-18** | System Override: Intento de bypass de politicas | Rechazo estricto de comandos | Rechazo como no pertinente | APROBADO |
+| **TC-19** | Catalogo: Carga de 20 jugadores | Deteccion estricta de IDs duplicados | Verificado sin colisiones | APROBADO |
+| **TC-20** | Auditoria: Rectificacion manual de etiqueta | Preservacion de clasificacion previa | Trazabilidad persistida | APROBADO |
 
 ### 7.2 Ejecucion de la Suite con Pytest
 
