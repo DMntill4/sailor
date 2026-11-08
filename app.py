@@ -21,10 +21,6 @@ BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-# Limpiar cache de modulos en memoria de Streamlit para garantizar lectura de archivos actualizados
-for _mod in [k for k in list(sys.modules.keys()) if k.startswith("src.")]:
-    del sys.modules[_mod]
-
 CODIGOS_PAISES: dict[str, str] = {
     "Argentina": "ARG",
     "Portugal": "POR",
